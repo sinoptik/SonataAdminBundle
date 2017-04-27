@@ -264,6 +264,37 @@ class GroupMenuProviderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * @param array $adminGroups
+     *
+     * @dataProvider getAdminGroups
+     */
+    public function testGetMenuProviderKeepOpenOption(array $adminGroups)
+    {
+        $this->pool->expects($this->once())
+            ->method('getInstance')
+            ->with($this->equalTo('sonata_admin_foo_service'))
+            ->will($this->returnValue($this->getAdminMock()));
+
+        $this->checker->expects($this->any())
+            ->method('isGranted')
+            ->willReturn(true);
+
+        $adminGroups['keep_open'] = true;
+
+        $menu = $this->provider->get(
+            'providerFoo',
+            array(
+                'name' => 'foo',
+                'group' => $adminGroups,
+            )
+        );
+
+        $this->assertInstanceOf('Knp\Menu\ItemInterface', $menu);
+        $this->assertSame('keep-open', $menu->getAttribute('class'));
+        $this->assertTrue($menu->getExtra('keep_open'));
+    }
+
+    /**
      * @return array
      */
     public function getAdminGroups()
@@ -331,15 +362,15 @@ class GroupMenuProviderTest extends PHPUnit_Framework_TestCase
      */
     private function getAdminMock($hasRoute = true, $isGranted = true)
     {
-        $admin = $this->getMockForAbstractClass('Sonata\AdminBundle\Admin\AdminInterface');
+        $admin = $this->createMock('Sonata\AdminBundle\Admin\AbstractAdmin');
         $admin->expects($this->once())
             ->method('hasRoute')
             ->with($this->equalTo('list'))
             ->will($this->returnValue($hasRoute));
 
         $admin->expects($this->any())
-            ->method('isGranted')
-            ->with($this->equalTo('LIST'))
+            ->method('hasAccess')
+            ->with($this->equalTo('list'))
             ->will($this->returnValue($isGranted));
 
         $admin->expects($this->any())

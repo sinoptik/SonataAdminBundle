@@ -41,7 +41,7 @@ class AdminType extends AbstractType
             $admin->getParentFieldDescription()->setAssociationAdmin($admin);
         }
 
-        if ($options['delete'] && $admin->isGranted('DELETE')) {
+        if ($options['delete'] && $admin->hasAccess('delete')) {
             if (!array_key_exists('translation_domain', $options['delete_options']['type_options'])) {
                 $options['delete_options']['type_options']['translation_domain'] = $admin->getTranslationDomain();
             }
@@ -70,7 +70,7 @@ class AdminType extends AbstractType
                         // for PropertyAccessor >= 2.5
                         $subject = $p->getValue(
                             $parentSubject,
-                            $this->getFieldDescription($options)->getFieldName().$options['property_path']
+                            $options['property_path']
                         );
                     }
                     $builder->setData($subject);

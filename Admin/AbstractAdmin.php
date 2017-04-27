@@ -232,11 +232,10 @@ abstract class AbstractAdmin implements AdminInterface, DomainObjectInterface
     protected $baseCodeRoute = '';
 
     /**
-     * The related field reflection, ie if OrderElement is linked to Order,
-     * then the $parentReflectionProperty must be the ReflectionProperty of
-     * the order (OrderElement::$order).
+     * The related parent association, ie if OrderElement has a parent property named order,
+     * then the $parentAssociationMapping must be a string named `order`.
      *
-     * @var \ReflectionProperty
+     * @var string
      */
     protected $parentAssociationMapping = null;
 
@@ -556,6 +555,8 @@ abstract class AbstractAdmin implements AdminInterface, DomainObjectInterface
 
     /**
      * {@inheritdoc}
+     *
+     * NEXT_MAJOR: return null to indicate no override
      */
     public function getExportFormats()
     {
@@ -838,14 +839,24 @@ abstract class AbstractAdmin implements AdminInterface, DomainObjectInterface
 
         // ok, try to limit to add parent filter
         if ($this->isChild() && $this->getParentAssociationMapping() && !$mapper->has($this->getParentAssociationMapping())) {
+            // NEXT_MAJOR: Keep FQCN when bumping Symfony requirement to 2.8+.
+            $modelHiddenType = method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')
+                ? 'Sonata\AdminBundle\Form\Type\ModelHiddenType'
+                : 'sonata_type_model_hidden';
+
+            // NEXT_MAJOR: Keep FQCN when bumping Symfony requirement to 2.8+.
+            $hiddenType = method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')
+                ? 'Symfony\Component\Form\Extension\Core\Type\HiddenType'
+                : 'hidden';
+
             $mapper->add($this->getParentAssociationMapping(), null, array(
                 'show_filter' => false,
                 'label' => false,
-                'field_type' => 'sonata_type_model_hidden',
+                'field_type' => $modelHiddenType,
                 'field_options' => array(
                     'model_manager' => $this->getModelManager(),
                 ),
-                'operator_type' => 'hidden',
+                'operator_type' => $hiddenType,
             ), null, null, array(
                 'admin_code' => $this->getParent()->getCode(),
             ));
@@ -1084,7 +1095,7 @@ abstract class AbstractAdmin implements AdminInterface, DomainObjectInterface
     {
         $actions = array();
 
-        if ($this->hasRoute('delete') && $this->isGranted('DELETE')) {
+        if ($this->hasRoute('delete') && $this->hasAccess('delete')) {
             $actions['delete'] = array(
                 'label' => 'action_delete',
                 'translation_domain' => 'SonataAdminBundle',
@@ -2936,7 +2947,7 @@ EOT;
     {
         $actions = array();
 
-        if ($this->hasRoute('create') && $this->isGranted('CREATE')) {
+        if ($this->hasRoute('create') && $this->hasAccess('create')) {
             $actions['create'] = array(
                 'label' => 'link_add',
                 'translation_domain' => 'SonataAdminBundle',
@@ -2946,7 +2957,7 @@ EOT;
             );
         }
 
-        if ($this->hasRoute('list') && $this->isGranted('LIST')) {
+        if ($this->hasRoute('list') && $this->hasAccess('list')) {
             $actions['list'] = array(
                 'label' => 'link_list',
                 'translation_domain' => 'SonataAdminBundle',

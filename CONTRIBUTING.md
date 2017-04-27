@@ -72,9 +72,29 @@ php-cs-fixer fix --verbose
 
 #### The documentation
 
-The documentation is mostly written with the `rst` format. You can test the doc rendering with the `make docs` command.
+The documentation is mostly written with the `rst` format, and can be found in the `Resources/doc` directory.
+You can test the doc rendering with the `make docs` command, but to do this, you will need [Sphinx][sphinx_install].
+Just like php dependencies can be managed with Composer, python dependencies can be managed with [pip][pip_install].
+To get sphinx, simply run the following command.
+
+```bash
+pip install --requirement Resources/doc/requirements.txt --user
+```
+
+Some python binaries should be downloaded in `~/.local/bin`,
+[modify your `$PATH` environment variable](http://www.linfo.org/path_env_var.html)
+so that it contains this path and then, from the root of the project, run `make docs`
+
+If `make docs` is successful, you should be able to see your modifications:
+
+```bash
+$YOUR_FAVORITE_BROWSER Resources/doc/_build/html/index.html
+```
 
 If your PR contains a new feature, you must add documentation for it.
+Of course, you can also create PRs consisting only in documentation changes.
+
+Documentation contributions should comply with [the Symfony documentation standards][sf_docs_standards].
 
 #### The tests
 
@@ -96,6 +116,24 @@ Some rules have to be respected about the test:
 * As opposed, the `@test` annotation is prohibited.
 * Most of the time, the test class should have the same name as the targeted class, suffixed by `Test`.
 * The `@expectedException*` annotations are prohibited. Use `PHPUnit_Framework_TestCase::setExpectedException()`.
+
+##### Using test doubles
+
+Since version 4.5, PHPUnit requires and [integrates](https://phpunit.de/manual/current/en/test-doubles.html#test-doubles.prophecy)
+the [phpspec/prophecy](https://github.com/phpspec/prophecy).
+Historically, Sonata has been using [the built-in test doubles implementation](https://phpunit.de/manual/current/en/test-doubles.html),
+but [has decided to move to Prophecy](https://github.com/sonata-project/dev-kit/issues/89),
+which is more concise than its built-in counterpart is most cases.
+This means the current Sonata codebase currently uses both implementations.
+If you want to contribute a test that uses test doubles, please follow these rules :
+
+1. All new test classes MUST use Prophecy.
+2. If you are changing an existing test method, you MUST use the same implementation it already uses,
+and focus on the goal of your PR and only on that.
+3. If you are changing an existing test class, you MUST use the same implementation it already uses,
+to be more consistent.
+4. You MAY submit a PR that migrates a test class from the built-in test double implementation to Prophecy,
+but it must migrate it entirely. The PR should only be about the migration.
 
 ### Writing a Pull Request
 
@@ -299,3 +337,7 @@ This is a consensus made on #4242 in addition to #1337.
 We agreed that blank color is boring and so deja vu. Pink is the new way to do.
 ```
 (Obviously, this commit is fake. :wink:)
+
+[sphinx_install]: http://www.sphinx-doc.org/en/stable/
+[pip_install]: https://pip.pypa.io/en/stable/installing/
+[sf_docs_standards]: https://symfony.com/doc/current/contributing/documentation/standards.html
