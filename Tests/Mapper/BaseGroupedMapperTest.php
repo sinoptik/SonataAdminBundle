@@ -11,6 +11,8 @@
 
 namespace Sonata\AdminBundle\Tests\Mapper;
 
+use PHPUnit\Framework\TestCase;
+use Sonata\AdminBundle\Admin\Pool;
 use Sonata\AdminBundle\Mapper\BaseGroupedMapper;
 
 /**
@@ -18,7 +20,7 @@ use Sonata\AdminBundle\Mapper\BaseGroupedMapper;
  *
  * @author Andrej Hudec <pulzarraider@gmail.com>
  */
-class BaseGroupedMapperTest extends \PHPUnit_Framework_TestCase
+class BaseGroupedMapperTest extends TestCase
 {
     /**
      * @var BaseGroupedMapper
@@ -30,15 +32,36 @@ class BaseGroupedMapperTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $admin = $this->getMockForAbstractClass('Sonata\AdminBundle\Admin\AdminInterface');
+        $admin = $this->getMockBuilder('Sonata\AdminBundle\Admin\AbstractAdmin')
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $labelStrategy = $this->createMock('Sonata\AdminBundle\Translator\LabelTranslatorStrategyInterface');
+        $labelStrategy->expects($this->any())
+            ->method('getLabel')
+            ->will($this->returnCallback(function ($label) {
+                return 'label_'.strtolower($label);
+            }));
+
+        $admin->expects($this->any())
+            ->method('getLabelTranslatorStrategy')
+            ->will($this->returnValue($labelStrategy));
+
+        $container = $this->getMockForAbstractClass('Symfony\Component\DependencyInjection\ContainerInterface');
+        $configurationPool = new Pool($container, 'myTitle', 'myLogoTitle');
+
+        $admin->expects($this->any())
+            ->method('getConfigurationPool')
+            ->will($this->returnValue($configurationPool));
+
         $builder = $this->getMockForAbstractClass('Sonata\AdminBundle\Builder\BuilderInterface');
 
-        $this->baseGroupedMapper = $this->getMockForAbstractClass('Sonata\AdminBundle\Mapper\BaseGroupedMapper', array($builder, $admin));
+        $this->baseGroupedMapper = $this->getMockForAbstractClass('Sonata\AdminBundle\Mapper\BaseGroupedMapper', [$builder, $admin]);
 
         // php 5.3 BC
         $object = $this;
-        $this->tabs = array();
-        $this->groups = array();
+        $this->tabs = [];
+        $this->groups = [];
 
         $this->baseGroupedMapper->expects($this->any())
             ->method('getTabs')
@@ -92,7 +115,7 @@ class BaseGroupedMapperTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertCount(0, $this->tabs);
         $this->assertCount(0, $this->groups);
-        $this->assertSame($this->baseGroupedMapper, $this->baseGroupedMapper->with('fooTab', array('tab' => true)));
+        $this->assertSame($this->baseGroupedMapper, $this->baseGroupedMapper->with('fooTab', ['tab' => true]));
         $this->assertCount(1, $this->tabs);
         $this->assertCount(0, $this->groups);
     }
@@ -150,6 +173,42 @@ class BaseGroupedMapperTest extends \PHPUnit_Framework_TestCase
     public function testEndException()
     {
         $this->baseGroupedMapper->end();
+    }
+
+    public function labelDataProvider()
+    {
+        return [
+            'nominal use case not translated' => [false, 'fooGroup1', null, 'fooGroup1'],
+            'nominal use case translated' => [true, 'fooGroup1', null, 'label_foogroup1'],
+            'custom label not translated' => [false, 'fooGroup1', 'custom_label', 'custom_label'],
+            'custom label translated' => [true, 'fooGroup1', 'custom_label', 'custom_label'],
+        ];
+    }
+
+    /**
+     * @dataProvider labelDataProvider
+     */
+    public function testLabel($translated, $name, $label, $expectedLabel)
+    {
+        $container = $this->baseGroupedMapper
+            ->getAdmin()
+            ->getConfigurationPool()
+            ->getContainer();
+
+        $container->expects($this->any())
+            ->method('getParameter')
+            ->will($this->returnValue($translated));
+
+        $options = [];
+
+        if (null !== $label) {
+            $options['label'] = $label;
+        }
+
+        $this->baseGroupedMapper->with($name, $options);
+
+        $this->assertSame($translated ? 'label_default' : 'default', $this->tabs['default']['label']);
+        $this->assertSame($expectedLabel, $this->groups[$name]['label']);
     }
 
     public function getTabs()

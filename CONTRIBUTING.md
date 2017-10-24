@@ -2,11 +2,13 @@
 
 Thanks for your interest in Sonata projects!
 
+This document is about issues and pull requests.
+
 ## Summary
 
 * [Issues](#issues)
 * [Pull Requests](#pull-requests)
-* [Label rules]()
+* [Code Reviews](#code-reviews)
 
 ## Issues
 
@@ -81,7 +83,7 @@ To get sphinx, simply run the following command.
 pip install --requirement Resources/doc/requirements.txt --user
 ```
 
-Some python binaries should be downloaded in `~/.local/bin`,
+Some python binaries should be downloaded to `~/.local/bin` for Linux or `~/Library/Python/2.7/bin` for Mac OS,
 [modify your `$PATH` environment variable](http://www.linfo.org/path_env_var.html)
 so that it contains this path and then, from the root of the project, run `make docs`
 
@@ -269,6 +271,25 @@ or postponed to next major release if BC is not possible.
 
 If you are not sure what should be done, don't hesitate to open an issue about your PR project.
 
+##### Dependency changes
+
+If you want to change some dependencies, here are the rules:
+
+- Don't add support for a version lower than the current one.
+- Don't change the highest supported version to a lower one.
+- Lower version dropping is accepted as a Backward Compatible change according to [semver][semver_dependencies_update],
+but some extra rules must be respected here:
+  - PHP versions that are under the [green zone][php_supported_versions] (actively maintained) **MUST NO** be dropped, even on master.
+  - If it's a Symfony package, at least the last LTS version **MUST** be supported, even on master.
+  - Generally, don't drop dependency version it it doesn't have a big impact on the code.
+
+##### Legacy branches
+
+Legacy branches are **NOT** supported at all. Any submitted Pull Request will be immediately closed.
+
+Core team members *may* cherry-pick some fixes from the stable branch to the legacy one if it's really needed
+and if the legacy one is not too old (~less than one month).
+
 #### The commit message
 
 Sonata is a big project with many contributors, and a big part of the job is
@@ -338,6 +359,101 @@ We agreed that blank color is boring and so deja vu. Pink is the new way to do.
 ```
 (Obviously, this commit is fake. :wink:)
 
+## Code Reviews
+
+Grooming a PR until it is ready to get merged is a contribution by itself.
+Indeed, why contribute a PR if there are hundreds of PRs already waiting to get reviewed and hopefully, merged?
+By taking up this task, you will try to speed up this process by making sure the merge can be made with peace of mind.
+
+### Commenting on a PR
+
+Before doing anything refrain to dive head-first in the details of the PR and try to see the big picture,
+to understand the subject of the PR. If the PR fixes an issue, read the issue first.
+This is to avoid the pain of making a reviewer rework their whole PR and then not merging it.
+
+Things to hunt for :
+
+- missing docs . This is what you should look for first. If you think the PR lacks docs,
+ask for them, because you will be better at reviewing it if you understand it better,
+and docs help a lot with that.
+- missing tests : Encourage people to do TDD by making clear a PR will not get merged
+if it lacks tests. Not everything is easy to test though, keep that in mind.
+- BC breaks : If there is a BC-break, ask for a deprecation system to be created instead,
+and make sure the `master` branch is used.
+- Unclear pieces of code : does the code use clear, appropriate variable or class names,
+or does it use names like `data`, `result`, `WhateverManager`, `SomethingService`?
+Are exception names still meaningful if you remove the `Exception` suffix? Do all
+exceptions have a custom message?
+Is the contributor trying to be clever or to be clear?
+- Violations of the [SOLID][solid] principles :
+    - S : If a class is 3000 lines long, maybe it does too many things?
+    - O : Is there a big switch statement that might grow in the future?
+    - L : Does the program behave reasonably when replacing a class with a child class?
+    - I : Are interfaces small and easy to implement? If not, can they be split into smaller interfaces?
+    - D : Is the name of a class hardcoded in another class, with the `new` keyword or a static call?
+- Spelling / grammar mistakes, including in commit messages or UPGRADE / CHANGELOG notes.
+- Dependency modifications : is anything new introduced, if yes is it worth it?
+
+[solid]: https://en.wikipedia.org/wiki/SOLID_(object-oriented_design)
+
+Leave no stone unturned. When in doubt, ask for a clarification. If the
+clarification seems useful, and does not appear in a code comment or in a commit
+message, say so and / or make use a squash-merge to customize the commit message.
+Ideally, the project history should be understandable without an internet connection,
+and the PR should be understandable without having a look at the changes.
+
+Also, make sure your feedback is actionable, it is important to keep the ball rolling,
+so if you raise a question, try to also provide solutions.
+
+### Labelling the PR
+
+Applying labels requires write access to PRs, but you can still advise if you do not have them.
+There are several labels that will help determine what the next version number will be.
+Apply the first label that matches one of this conditions, in that order:
+
+- `major`: there is a BC-break. The PR should target the `master` branch.
+- `minor`: there is a backwards-compatible change in the API. The PR should target the stable branch.
+- `patch`: this fixes an issue (not necessarily reported). The PR should target the stable branch.
+- `docs`: this PR is solely about the docs. `pedantic` is implied.
+- `pedantic`: this change does not warrant a release.
+
+Also if you see that the PR lacks documentation, tests, a changelog note,
+or an upgrade note, use the appropriate label.
+
+### Reviewing PRs with several commits
+
+If there are several commits in a PR, make sure you review it commit by commit,
+so that you can check the commit messages, and make sure the commit are independent
+and atomic.
+
+### Merging
+
+Do not merge something you wrote yourself. Do not merge a PR you reviewed alone,
+instead, merge PRs that have already be reviewed and approved by another reviewer.
+If the commit history is unclear or irrelevant, prefer the "Squash and merge" feature, otherwise, always
+use the "Rebase and merge" feature.
+And finally, use your common sense : if you see a PR about a typo,
+or if there is a situation (faulty commit, revert needed) maybe you can merge it directly.
+
+#### Dependencies version dropping
+
+Do not merge any merge request dropping a dependency version support.
+To achieve that, mark them as `RTM`, and mention then on Slack when asking for a release.
+
+This rule should be applied for these reasons:
+
+- Even if it's semver compatible, we don't maintain minor branches.
+So it's preferable to give priority to bugfixes over version-dropping PRs.
+- Some dependencies need a dev-kit update. By the way, you can make a PR on dev-kit and link it to your own.
+
+### Be nice to the contributor
+
+Thank them for contributing. Encourage them if you feel this is going to be long.
+In short, try to make them want to contribute again. If they are stuck, try to provide them with
+code yourself, or ping someone who can help.
+
 [sphinx_install]: http://www.sphinx-doc.org/en/stable/
 [pip_install]: https://pip.pypa.io/en/stable/installing/
 [sf_docs_standards]: https://symfony.com/doc/current/contributing/documentation/standards.html
+[semver_dependencies_update]: http://semver.org/#what-should-i-do-if-i-update-my-own-dependencies-without-changing-the-public-api
+[php_supported_versions]: http://php.net/supported-versions.php

@@ -52,7 +52,15 @@ class ModelAutocompleteType extends AbstractType
 
         if ($options['multiple']) {
             $resizeListener = new ResizeFormListener(
-                'hidden', array(), true, true, true
+                // NEXT_MAJOR: Remove ternary and keep 'Symfony\Component\Form\Extension\Core\Type\HiddenType'
+                // (when requirement of Symfony is >= 2.8)
+                method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')
+                    ? 'Symfony\Component\Form\Extension\Core\Type\HiddenType'
+                    : 'hidden',
+                [],
+                true,
+                true,
+                true
             );
 
             $builder->addEventSubscriber($resizeListener);
@@ -114,8 +122,8 @@ class ModelAutocompleteType extends AbstractType
             return $options['multiple'];
         };
 
-        $resolver->setDefaults(array(
-            'attr' => array(),
+        $resolver->setDefaults([
+            'attr' => [],
             'compound' => $compound,
             'model_manager' => null,
             'class' => null,
@@ -135,8 +143,8 @@ class ModelAutocompleteType extends AbstractType
 
             // ajax parameters
             'url' => '',
-            'route' => array('name' => 'sonata_admin_retrieve_autocomplete_items', 'parameters' => array()),
-            'req_params' => array(),
+            'route' => ['name' => 'sonata_admin_retrieve_autocomplete_items', 'parameters' => []],
+            'req_params' => [],
             'req_param_name_search' => 'q',
             'req_param_name_page_number' => '_page',
             'req_param_name_items_per_page' => '_per_page',
@@ -152,9 +160,9 @@ class ModelAutocompleteType extends AbstractType
             'dropdown_auto_width' => false,
 
             'template' => 'SonataAdminBundle:Form/Type:sonata_type_model_autocomplete.html.twig',
-        ));
+        ]);
 
-        $resolver->setRequired(array('property'));
+        $resolver->setRequired(['property']);
     }
 
     /**

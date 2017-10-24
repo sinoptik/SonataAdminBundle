@@ -11,12 +11,12 @@
 
 namespace Sonata\AdminBundle\Tests\Form;
 
+use PHPUnit\Framework\TestCase;
 use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Tests\Fixtures\Admin\CleanAdmin;
-use Sonata\AdminBundle\Tests\Helpers\PHPUnit_Framework_TestCase;
 use Symfony\Component\Form\FormBuilder;
 
-class FormMapperTest extends PHPUnit_Framework_TestCase
+class FormMapperTest extends TestCase
 {
     /**
      * @var \Sonata\AdminBundle\Builder\FormContractorInterface
@@ -56,7 +56,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
 
         $this->modelManager->expects($this->any())
             ->method('getNewFieldDescriptionInstance')
-            ->will($this->returnCallback(function ($class, $name, array $options = array()) use ($fieldDescription) {
+            ->will($this->returnCallback(function ($class, $name, array $options = []) use ($fieldDescription) {
                 $fieldDescriptionClone = clone $fieldDescription;
                 $fieldDescriptionClone->setName($name);
                 $fieldDescriptionClone->setOptions($options);
@@ -80,67 +80,71 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
     {
         $this->formMapper->with('foobar');
 
-        $this->assertSame(array('default' => array(
+        $this->assertSame(['default' => [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => 'default',
             'translation_domain' => null,
             'name' => 'default',
             'box_class' => 'box box-primary',
             'auto_created' => true,
-            'groups' => array('foobar'),
+            'groups' => ['foobar'],
             'tab' => true,
-        )), $this->admin->getFormTabs());
+        ]], $this->admin->getFormTabs());
 
-        $this->assertSame(array('foobar' => array(
+        $this->assertSame(['foobar' => [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => 'foobar',
             'translation_domain' => null,
             'name' => 'foobar',
             'box_class' => 'box box-primary',
-            'fields' => array(),
-        )), $this->admin->getFormGroups());
+            'fields' => [],
+        ]], $this->admin->getFormGroups());
     }
 
     public function testWithOptions()
     {
-        $this->formMapper->with('foobar', array(
+        $this->formMapper->with('foobar', [
             'translation_domain' => 'Foobar',
-        ));
+        ]);
 
-        $this->assertSame(array('foobar' => array(
+        $this->assertSame(['foobar' => [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => 'foobar',
             'translation_domain' => 'Foobar',
             'name' => 'foobar',
             'box_class' => 'box box-primary',
-            'fields' => array(),
-        )), $this->admin->getFormGroups());
+            'fields' => [],
+        ]], $this->admin->getFormGroups());
 
-        $this->assertSame(array('default' => array(
+        $this->assertSame(['default' => [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => 'default',
             'translation_domain' => 'Foobar',
             'name' => 'default',
             'box_class' => 'box box-primary',
             'auto_created' => true,
-            'groups' => array('foobar'),
+            'groups' => ['foobar'],
             'tab' => true,
-        )), $this->admin->getFormTabs());
+        ]], $this->admin->getFormTabs());
     }
 
     public function testWithFieldsCascadeTranslationDomain()
     {
         $this->contractor->expects($this->once())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
-        $this->formMapper->with('foobar', array(
+        $this->formMapper->with('foobar', [
                 'translation_domain' => 'Foobar',
-            ))
+            ])
             ->add('foo', 'bar')
         ->end();
 
@@ -151,29 +155,31 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($this->formMapper->has('foo'));
 
-        $this->assertSame(array('default' => array(
+        $this->assertSame(['default' => [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => 'default',
             'translation_domain' => 'Foobar',
             'name' => 'default',
             'box_class' => 'box box-primary',
             'auto_created' => true,
-            'groups' => array('foobar'),
+            'groups' => ['foobar'],
             'tab' => true,
-        )), $this->admin->getFormTabs());
+        ]], $this->admin->getFormTabs());
 
-        $this->assertSame(array('foobar' => array(
+        $this->assertSame(['foobar' => [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => 'foobar',
             'translation_domain' => 'Foobar',
             'name' => 'foobar',
             'box_class' => 'box box-primary',
-            'fields' => array(
+            'fields' => [
                 'foo' => 'foo',
-            ),
-        )), $this->admin->getFormGroups());
+            ],
+        ]], $this->admin->getFormGroups());
     }
 
     public function testRemoveCascadeRemoveFieldFromFormGroup()
@@ -186,7 +192,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
     {
         $this->contractor->expects($this->once())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
         $this->formMapper
             ->ifTrue(true)
@@ -212,7 +218,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
     {
         $this->contractor->expects($this->once())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
         $this->formMapper
             ->ifTrue(false)
@@ -229,7 +235,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
     {
         $this->contractor->expects($this->once())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
         $this->formMapper
             ->ifFalse(false)
@@ -255,7 +261,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
     {
         $this->contractor->expects($this->once())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
         $this->formMapper
             ->ifFalse(true)
@@ -383,7 +389,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
 
         $this->formMapper->removeGroup('foobar');
 
-        $this->assertSame(array(), $this->admin->getFormGroups());
+        $this->assertSame([], $this->admin->getFormGroups());
     }
 
     public function testGroupRemovingWithTab()
@@ -392,7 +398,7 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
 
         $this->formMapper->removeGroup('foobar', 'mytab');
 
-        $this->assertSame(array(), $this->admin->getFormGroups());
+        $this->assertSame([], $this->admin->getFormGroups());
     }
 
     public function testGroupRemovingWithoutTabAndWithTabRemoving()
@@ -401,8 +407,8 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
 
         $this->formMapper->removeGroup('foobar', 'default', true);
 
-        $this->assertSame(array(), $this->admin->getFormGroups());
-        $this->assertSame(array(), $this->admin->getFormTabs());
+        $this->assertSame([], $this->admin->getFormGroups());
+        $this->assertSame([], $this->admin->getFormTabs());
     }
 
     public function testGroupRemovingWithTabAndWithTabRemoving()
@@ -411,36 +417,36 @@ class FormMapperTest extends PHPUnit_Framework_TestCase
 
         $this->formMapper->removeGroup('foobar', 'mytab', true);
 
-        $this->assertSame(array(), $this->admin->getFormGroups());
-        $this->assertSame(array(), $this->admin->getFormTabs());
+        $this->assertSame([], $this->admin->getFormGroups());
+        $this->assertSame([], $this->admin->getFormTabs());
     }
 
     public function testKeys()
     {
         $this->contractor->expects($this->any())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
         $this->formMapper
             ->add('foo', 'bar')
             ->add('baz', 'foobaz')
         ;
 
-        $this->assertSame(array('foo', 'baz'), $this->formMapper->keys());
+        $this->assertSame(['foo', 'baz'], $this->formMapper->keys());
     }
 
     public function testFieldNameIsSanitized()
     {
         $this->contractor->expects($this->any())
             ->method('getDefaultOptions')
-            ->will($this->returnValue(array()));
+            ->will($this->returnValue([]));
 
         $this->formMapper
             ->add('fo.o', 'bar')
             ->add('ba__z', 'foobaz')
         ;
 
-        $this->assertSame(array('fo__o', 'ba____z'), $this->formMapper->keys());
+        $this->assertSame(['fo__o', 'ba____z'], $this->formMapper->keys());
     }
 
     private function getFieldDescriptionMock($name = null, $label = null, $translationDomain = null)

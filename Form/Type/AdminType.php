@@ -53,6 +53,7 @@ class AdminType extends AbstractType
         // https://github.com/sonata-project/SonataAdminBundle/pull/2076
         if ($builder->getData() === null) {
             $p = new PropertyAccessor(false, true);
+
             try {
                 $parentSubject = $admin->getParentFieldDescription()->getAdmin()->getSubject();
                 if ($parentSubject !== null && $parentSubject !== false) {
@@ -113,23 +114,26 @@ class AdminType extends AbstractType
      */
     public function configureOptions(OptionsResolver $resolver)
     {
-        $resolver->setDefaults(array(
+        $resolver->setDefaults([
             'delete' => function (Options $options) {
                 return $options['btn_delete'] !== false;
             },
-            'delete_options' => array(
-                'type' => 'checkbox',
-                'type_options' => array(
+            'delete_options' => [
+                // NEXT_MAJOR: Remove ternary (when requirement of Symfony is >= 2.8)
+                'type' => method_exists('Symfony\Component\Form\AbstractType', 'getBlockPrefix')
+                    ? 'Symfony\Component\Form\Extension\Core\Type\CheckboxType'
+                    : 'checkbox',
+                'type_options' => [
                     'required' => false,
                     'mapped' => false,
-                ),
-            ),
+                ],
+            ],
             'auto_initialize' => false,
             'btn_add' => 'link_add',
             'btn_list' => 'link_list',
             'btn_delete' => 'link_delete',
             'btn_catalogue' => 'SonataAdminBundle',
-        ));
+        ]);
     }
 
     /**

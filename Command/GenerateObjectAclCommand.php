@@ -47,14 +47,14 @@ class GenerateObjectAclCommand extends QuestionableCommand
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $output->writeln('Welcome to the AdminBundle object ACL generator');
-        $output->writeln(array(
+        $output->writeln([
                 '',
                 'This command helps you to generate ACL entities for the objects handled by the AdminBundle.',
                 '',
                 'If the step option is used, you will be asked if you want to generate the object ACL entities for each Admin.',
                 'You must use the shortcut notation like <comment>AcmeDemoBundle:User</comment> if you want to set an object owner.',
                 '',
-        ));
+        ]);
 
         if ($input->getOption('user_entity')) {
             try {
@@ -72,6 +72,7 @@ class GenerateObjectAclCommand extends QuestionableCommand
             } catch (\Exception $e) {
                 $output->writeln('<error>Warning : The admin class cannot be initiated from the command line</error>');
                 $output->writeln(sprintf('<error>%s</error>', $e->getMessage()));
+
                 continue;
             }
 
@@ -92,11 +93,13 @@ class GenerateObjectAclCommand extends QuestionableCommand
             $manipulatorId = sprintf('sonata.admin.manipulator.acl.object.%s', $admin->getManagerType());
             if (!$this->getContainer()->has($manipulatorId)) {
                 $output->writeln('Admin class is using a manager type that has no manipulator implemented : <info>ignoring</info>');
+
                 continue;
             }
             $manipulator = $this->getContainer()->get($manipulatorId);
             if (!$manipulator instanceof ObjectAclManipulatorInterface) {
                 $output->writeln(sprintf('The interface "ObjectAclManipulatorInterface" is not implemented for %s: <info>ignoring</info>', get_class($manipulator)));
+
                 continue;
             }
 

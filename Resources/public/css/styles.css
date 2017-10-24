@@ -28,6 +28,10 @@ body > .header .logo {
     font-family: 'Source Sans Pro', sans-serif;
 }
 
+.main-header {
+    height: 50px;
+}
+
 .logo img {
     display: inline;
     padding-bottom: 4px;
@@ -500,4 +504,16 @@ div.sonata-filters-box div.form-group div.form-group {
 div.sonata-filters-box div.form-group span.input-group-addon {
     padding: 3px 10px;
     font-size: 13px;
+}
+
+.sonata-search-result-hide {
+    display: none;
+}
+
+.sonata-search-result-fade {
+    opacity: 0.6;
+}
+
+.sonata-search-result-show {
+    display: block;
 }

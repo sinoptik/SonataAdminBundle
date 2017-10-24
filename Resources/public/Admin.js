@@ -25,6 +25,7 @@ var Admin = {
         Admin.add_filters(subject);
         Admin.setup_select2(subject);
         Admin.setup_icheck(subject);
+        Admin.setup_checkbox_range_selection(subject);
         Admin.setup_xeditable(subject);
         Admin.setup_form_tabs_for_errors(subject);
         Admin.setup_inline_form_errors(subject);
@@ -79,7 +80,7 @@ var Admin = {
                     width: function(){
                         // Select2 v3 and v4 BC. If window.Select2 is defined, then the v3 is installed.
                         // NEXT_MAJOR: Remove Select2 v3 support.
-                        return Admin.get_select2_width(window.Select2 ? this.element : jQuery(this));
+                        return Admin.get_select2_width(window.Select2 ? this.element : select);
                     },
                     dropdownAutoWidth: true,
                     minimumResultsForSearch: 10,
@@ -104,6 +105,55 @@ var Admin = {
                 radioClass: 'iradio_square-blue'
             });
         }
+    },
+    /**
+     * Setup checkbox range selection
+     *
+     * Clicking on a first checkbox then another with shift + click
+     * will check / uncheck all checkboxes between them
+     *
+     * @param {string|Object} subject The html selector or object on which function should be applied
+     */
+    setup_checkbox_range_selection: function(subject) {
+        Admin.log('[core|setup_checkbox_range_selection] configure checkbox range selection on', subject);
+
+        var previousIndex,
+            useICheck = window.SONATA_CONFIG && window.SONATA_CONFIG.USE_ICHECK
+        ;
+
+        // When a checkbox or an iCheck helper is clicked
+        jQuery('tbody input[type="checkbox"], tbody .iCheck-helper', subject).click(function (event) {
+            var input;
+
+            if (useICheck) {
+                input = jQuery(this).prev('input[type="checkbox"]');
+            } else {
+                input = jQuery(this);
+            }
+
+            if (input.length) {
+                var currentIndex = input.closest('tr').index();
+
+                if (event.shiftKey && previousIndex >= 0) {
+                    var isChecked = jQuery('tbody input[type="checkbox"]:nth(' + currentIndex + ')', subject).prop('checked');
+
+                    // Check all checkbox between previous and current one clicked
+                    jQuery('tbody input[type="checkbox"]', subject).each(function (i, e) {
+                        if (i > previousIndex && i < currentIndex || i > currentIndex && i < previousIndex) {
+                            if (useICheck) {
+                                jQuery(e).iCheck(isChecked ? 'check' : 'uncheck');
+
+                                return;
+                            }
+
+                            jQuery(e).prop('checked', isChecked);
+                        }
+                    });
+                }
+
+                previousIndex  = currentIndex;
+            }
+        });
     },
 
     setup_xeditable: function(subject) {
@@ -149,22 +199,9 @@ var Admin = {
     },
 
     stopEvent: function(event) {
-        // https://github.com/sonata-project/SonataAdminBundle/issues/151
-        //if it is a standard browser use preventDefault otherwise it is IE then return false
-        if(event.preventDefault) {
-            event.preventDefault();
-        } else {
-            event.returnValue = false;
-        }
+        event.preventDefault();
 
-        //if it is a standard browser get target otherwise it is IE then adapt syntax and get target
-        if (typeof event.target != 'undefined') {
-            targetElement = event.target;
-        } else {
-            targetElement = event.srcElement;
-        }
-
-        return targetElement;
+        return event.target;
     },
 
     add_filters: function(subject) {
@@ -425,7 +462,7 @@ var Admin = {
         if (style !== undefined) {
             var attrs = style.split(';');
 
-            for (i = 0, l = attrs.length; i < l; i = i + 1) {
+            for (var i = 0, l = attrs.length; i < l; i = i + 1) {
                 var matches = attrs[i].replace(/\s/g, '').match(ereg);
                 if (matches !== null && matches.length >= 1)
                     return matches[1];
@@ -450,7 +487,7 @@ var Admin = {
             width: function(){
                 // Select2 v3 and v4 BC. If window.Select2 is defined, then the v3 is installed.
                 // NEXT_MAJOR: Remove Select2 v3 support.
-                return Admin.get_select2_width(window.Select2 ? this.element : jQuery(this));
+                return Admin.get_select2_width(window.Select2 ? this.element : subject);
             },
             dropdownAutoWidth: true,
             data: transformedData,
@@ -490,6 +527,7 @@ var Admin = {
         if (window.SONATA_CONFIG && window.SONATA_CONFIG.USE_STICKYFORMS) {
             Admin.log('[core|setup_sticky_elements] setup sticky elements on', subject);
 
+            var topNavbar = jQuery(subject).find('.navbar-static-top');
             var wrapper = jQuery(subject).find('.content-wrapper');
             var navbar  = jQuery(wrapper).find('nav.navbar');
             var footer  = jQuery(wrapper).find('.sonata-ba-form-actions');
@@ -497,13 +535,19 @@ var Admin = {
             if (navbar.length) {
                 new Waypoint.Sticky({
                     element: navbar[0],
-                    offset:  50,
+                    offset: function() {
+                        Admin.refreshNavbarStuckClass(topNavbar);
+
+                        return jQuery(topNavbar).outerHeight();
+                    },
                     handler: function( direction ) {
                         if (direction == 'up') {
                             jQuery(navbar).width('auto');
                         } else {
                             jQuery(navbar).width(jQuery(wrapper).outerWidth());
                         }
+
+                        Admin.refreshNavbarStuckClass(topNavbar);
                     }
                 });
             }
@@ -547,7 +591,9 @@ var Admin = {
         );
 
         jQuery('body').on('expanded.pushMenu collapsed.pushMenu', function() {
-            Admin.handleResize(footer, navbar, wrapper);
+            setTimeout(function() {
+                Admin.handleResize(footer, navbar, wrapper);
+            }, 350); // the animation takes 0.3s to execute, so we have to take the width, just after the animation ended
         });
 
         jQuery(window).resize(
@@ -557,15 +603,25 @@ var Admin = {
         );
     },
     handleResize: function(footer, navbar, wrapper) {
-        setTimeout(function() {
-            if (navbar.length && jQuery(navbar).hasClass('stuck')) {
-                jQuery(navbar).width(jQuery(wrapper).outerWidth());
-            }
+        if (navbar.length && jQuery(navbar).hasClass('stuck')) {
+            jQuery(navbar).width(jQuery(wrapper).outerWidth());
+        }
 
-            if (footer.length && jQuery(footer).hasClass('stuck')) {
-                jQuery(footer).width(jQuery(wrapper).outerWidth());
-            }
-        }, 350); // the animation take 0.3s to execute, so we have to take the width, just after the animation ended
+        if (footer.length && jQuery(footer).hasClass('stuck')) {
+            jQuery(footer).width(jQuery(wrapper).outerWidth());
+        }
+    },
+    refreshNavbarStuckClass: function(topNavbar) {
+        var stuck = jQuery('#navbar-stuck');
+
+        if (!stuck.length) {
+            stuck = jQuery('<style id="navbar-stuck">')
+                .prop('type', 'text/css')
+                .appendTo('head')
+            ;
+        }
+
+        stuck.html('body.fixed .content-header .navbar.stuck { top: ' + jQuery(topNavbar).outerHeight() + 'px; }');
     },
     // http://davidwalsh.name/javascript-debounce-function
     debounce: function (func, wait, immediate) {
@@ -603,8 +659,19 @@ var Admin = {
                 lessLink: '<a href="#">'+jQuery(this).data('readmore-less')+'</a>'
             });
         });
+    },
+    handle_top_navbar_height: function() {
+        jQuery('.content-wrapper').css('padding-top', jQuery('.navbar-static-top').outerHeight());
     }
 };
+
+jQuery(document).ready(function() {
+    Admin.handle_top_navbar_height();
+});
+
+jQuery(window).resize(function() {
+    Admin.handle_top_navbar_height();
+});
 
 jQuery(document).ready(function() {
     jQuery('html').removeClass('no-js');

@@ -11,6 +11,8 @@
 
 namespace Sonata\AdminBundle\Mapper;
 
+use Sonata\AdminBundle\Admin\AbstractAdmin;
+
 /**
  * This class is used to simulate the Form API.
  *
@@ -43,7 +45,7 @@ abstract class BaseGroupedMapper extends BaseMapper
      *
      * @throws \RuntimeException
      */
-    public function with($name, array $options = array())
+    public function with($name, array $options = [])
     {
         /*
          * The current implementation should work with the following workflow:
@@ -65,14 +67,23 @@ abstract class BaseGroupedMapper extends BaseMapper
          *        ->end();
          *
          */
-        $defaultOptions = array(
+        $defaultOptions = [
             'collapsed' => false,
             'class' => false,
             'description' => false,
+            'label' => $name, // NEXT_MAJOR: Remove this line and uncomment the next one
+//            'label' => $this->admin->getLabelTranslatorStrategy()->getLabel($name, $this->getName(), 'group'),
             'translation_domain' => null,
             'name' => $name,
             'box_class' => 'box box-primary',
-        );
+        ];
+
+        // NEXT_MAJOR: remove this code
+        if ($this->admin instanceof AbstractAdmin && $pool = $this->admin->getConfigurationPool()) {
+            if ($pool->getContainer()->getParameter('sonata.admin.configuration.translate_group_label')) {
+                $defaultOptions['label'] = $this->admin->getLabelTranslatorStrategy()->getLabel($name, $this->getName(), 'group');
+            }
+        }
 
         $code = $name;
 
@@ -84,19 +95,20 @@ abstract class BaseGroupedMapper extends BaseMapper
                 if (isset($tabs[$this->currentTab]['auto_created']) && true === $tabs[$this->currentTab]['auto_created']) {
                     throw new \RuntimeException('New tab was added automatically when you have added field or group. You should close current tab before adding new one OR add tabs before adding groups and fields.');
                 }
+
                 throw new \RuntimeException(sprintf('You should close previous tab "%s" with end() before adding new tab "%s".', $this->currentTab, $name));
             } elseif ($this->currentGroup) {
                 throw new \RuntimeException(sprintf('You should open tab before adding new group "%s".', $name));
             }
 
             if (!isset($tabs[$name])) {
-                $tabs[$name] = array();
+                $tabs[$name] = [];
             }
 
-            $tabs[$code] = array_merge($defaultOptions, array(
+            $tabs[$code] = array_merge($defaultOptions, [
                 'auto_created' => false,
-                'groups' => array(),
-            ), $tabs[$code], $options);
+                'groups' => [],
+            ], $tabs[$code], $options);
 
             $this->currentTab = $code;
         } else {
@@ -106,11 +118,11 @@ abstract class BaseGroupedMapper extends BaseMapper
 
             if (!$this->currentTab) {
                 // no tab define
-                $this->with('default', array(
+                $this->with('default', [
                     'tab' => true,
                     'auto_created' => true,
                     'translation_domain' => isset($options['translation_domain']) ? $options['translation_domain'] : null,
-                )); // add new tab automatically
+                ]); // add new tab automatically
             }
 
             // if no tab is selected, we go the the main one named '_' ..
@@ -120,12 +132,12 @@ abstract class BaseGroupedMapper extends BaseMapper
 
             $groups = $this->getGroups();
             if (!isset($groups[$code])) {
-                $groups[$code] = array();
+                $groups[$code] = [];
             }
 
-            $groups[$code] = array_merge($defaultOptions, array(
-                'fields' => array(),
-            ), $groups[$code], $options);
+            $groups[$code] = array_merge($defaultOptions, [
+                'fields' => [],
+            ], $groups[$code], $options);
 
             $this->currentGroup = $code;
             $this->setGroups($groups);
@@ -199,9 +211,9 @@ abstract class BaseGroupedMapper extends BaseMapper
      *
      * @return $this
      */
-    public function tab($name, array $options = array())
+    public function tab($name, array $options = [])
     {
-        return $this->with($name, array_merge($options, array('tab' => true)));
+        return $this->with($name, array_merge($options, ['tab' => true]));
     }
 
     /**
@@ -255,6 +267,18 @@ abstract class BaseGroupedMapper extends BaseMapper
     abstract protected function setTabs(array $tabs);
 
     /**
+     * NEXT_MAJOR: make this method abstract.
+     *
+     * @return string
+     */
+    protected function getName()
+    {
+        @trigger_error(__METHOD__.' should be implemented and will be abstract in 4.0.', E_USER_DEPRECATED);
+
+        return 'default';
+    }
+
+    /**
      * Add the field name to the current group.
      *
      * @param string $fieldName
@@ -283,7 +307,7 @@ abstract class BaseGroupedMapper extends BaseMapper
     protected function getCurrentGroupName()
     {
         if (!$this->currentGroup) {
-            $this->with($this->admin->getLabel(), array('auto_created' => true));
+            $this->with($this->admin->getLabel(), ['auto_created' => true]);
         }
 
         return $this->currentGroup;

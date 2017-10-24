@@ -40,14 +40,19 @@ All we need to do now is add a reference for this field in our ``PageAdmin`` cla
         }
     }
 
-Since the ``image1`` field refers to a related entity we do not need to specify
-any options. Sonata will calculate that the linked class is of type ``Image`` and,
-by default, retrieve a list of all existing Images to display as choices in the
-selector.
-
 Note that the third parameter to ``FormMapper::add()`` is optional so
 there is no need to pass in an empty array, it is shown here just to demonstrate
 where the options go when you want to use them.
+
+Since the ``image1`` field refers to a related entity we do not need to specify
+any options. Sonata will calculate that the linked admin class is of type ``Image`` and,
+by default, use the ``ImageAdmin`` class to retrieve a list of all existing Images
+to display as choices in the selector.
+
+.. tip::
+
+    You need to create ``ImageAdmin`` class in this case to use ``sonata_type_model`` type.
+    :ref:`You can also use <form_types_fielddescription_options>` use the ``admin_code`` parameter.
 
 The available options are:
 
@@ -75,7 +80,11 @@ preferred_choices
   defaults to array() - see the `Symfony choice Field Type docs`_ for more info
 
 choice_list
+  **(deprecated in favor of choice_loader since Symfony 2.7)**
   defaults to a ``ModelChoiceList`` built from the other options
+
+choice_loader
+  defaults to a ``ModelChoiceLoader`` built from the other options
 
 model_manager
   defaults to null, but is actually calculated from the linked Admin class.
@@ -248,7 +257,7 @@ to_string_callback
     ;
 
 multiple
-  defaults to false. Set to true, if you're field is in many-to-many relation.
+  defaults to false. Set to true, if your field is in a many-to-many relation.
 
 placeholder
   defaults to "". Placeholder is shown when no item is selected.
@@ -461,6 +470,7 @@ that looks like this:
                     - 'SonataAdminBundle:CRUD'
                 calls:
                     - [ setTranslationDomain, [AppBundle]]
+                public: true
 
 .. note::
 
@@ -560,6 +570,11 @@ You can listen to this event to trigger custom JavaScript (eg: add a calendar wi
 **TIP**: Setting the 'required' option to true does not cause a requirement of 'at least one' child entity.
 Setting the 'required' option to false causes all nested form fields to become not required as well.
 
+.. tip::
+
+    You can check / uncheck a range of checkboxes by clicking a first one,
+    then a second one with shift + click.
+
 sonata_type_native_collection (previously collection)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -579,6 +594,8 @@ This bundle handle the native Symfony ``collection`` form type by adding:
     or before deleted (``sonata-collection-item-deleted``).
     A jQuery event is fired after a row has been deleted successfully (``sonata-collection-item-deleted-successful``)
     You can listen to these events to trigger custom JavaScript.
+
+.. _form_types_fielddescription_options:
 
 FieldDescription options
 ^^^^^^^^^^^^^^^^^^^^^^^^

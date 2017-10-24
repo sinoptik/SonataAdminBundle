@@ -110,7 +110,7 @@ file that was distributed with this source code.
     {% set label_class = label_class|default('') ~ ' control-label' %}
 
     {% if label is not same as(false) %}
-        {% set label_attr = label_attr|merge({'class': label_attr.class|default('') ~ label_class }) %}
+        {% set label_attr = label_attr|merge({'class': label_attr.class|default('') ~ ' ' ~ label_class }) %}
 
         {% if not compound %}
             {% set label_attr = label_attr|merge({'for': id}) %}
@@ -170,7 +170,11 @@ file that was distributed with this source code.
             {{- widget|raw -}}
             {%- if label is not same as(false) -%}
                 <span class="control-label__text">
-                    {{- label|trans({}, translation_domain) -}}
+                    {% if translation_domain is same as(false) %}
+                        {{- label -}}
+                    {% else %}
+                        {{- label|trans({}, translation_domain) -}}
+                    {%- endif -%}
                 </span>
             {%- endif -%}
         </label>
@@ -183,7 +187,11 @@ file that was distributed with this source code.
     <ul {{ block('widget_container_attributes') }}>
     {% for child in form %}
         <li>
-            {{ form_widget(child, {'horizontal': false, 'horizontal_input_wrapper_class': ''}) }} {# {'horizontal': false, 'horizontal_input_wrapper_class': ''} needed to avoid MopaBootstrapBundle messing with the DOM #}
+            {{ form_widget(child, {
+                'horizontal': false,
+                'horizontal_input_wrapper_class': '',
+                'translation_domain': choice_translation_domain
+            }) }} {# 'horizontal' values are needed to avoid MopaBootstrapBundle messing with the DOM #}
         </li>
     {% endfor %}
     </ul>
@@ -422,6 +430,8 @@ file that was distributed with this source code.
 {% block sonata_type_immutable_array_widget %}
     {% spaceless %}
         <div {{ block('widget_container_attributes') }}>
+            {{ block('sonata_help') }}
+
             {{ form_errors(form) }}
 
             {% for key, child in form %}
@@ -435,7 +445,7 @@ file that was distributed with this source code.
 
 {% block sonata_type_immutable_array_widget_row %}
     {% spaceless %}
-        <div class="form-group{% if child.vars.errors|length > 0%} error{%endif%}" id="sonata-ba-field-container-{{ id }}-{{ key }}">
+        <div class="form-group{% if child.vars.errors|length > 0%} has-error{%endif%}" id="sonata-ba-field-container-{{ id }}-{{ key }}">
 
             {{ form_label(child) }}
 
@@ -446,6 +456,8 @@ file that was distributed with this source code.
 
             <div class="{{ div_class }} sonata-ba-field sonata-ba-field-{{ sonata_admin.edit }}-{{ sonata_admin.inline }} {% if child.vars.errors|length > 0 %}sonata-ba-field-error{% endif %}">
                 {{ form_widget(child, {'horizontal': false, 'horizontal_input_wrapper_class': ''}) }} {# {'horizontal': false, 'horizontal_input_wrapper_class': ''} needed to avoid MopaBootstrapBundle messing with the DOM #}
+                {% set sonata_help = child.vars.sonata_help %}
+                {{ block('sonata_help') }}
             </div>
 
             {% if child.vars.errors|length > 0 %}
@@ -463,37 +475,41 @@ file that was distributed with this source code.
 
 {% block sonata_type_choice_field_mask_widget %}
     {{ block('choice_widget') }}
-    {% set main_form_name = id|slice(0, id|length - name|length) %}
+    {# Taking the form name excluding ending field glue character #}
+    {% set main_form_name = id|slice(0, (id|length - name|length)-1) %}
     <script>
         jQuery(document).ready(function() {
             var allFields = {{ all_fields|json_encode|raw }};
             var map = {{ map|json_encode|raw }};
 
-            var showMaskChoiceEl = jQuery('#{{ main_form_name }}{{ name }}');
+            var showMaskChoiceEl = jQuery('#{{ main_form_name }}_{{ name }}');
 
             showMaskChoiceEl.on('change', function () {
                 choice_field_mask_show(jQuery(this).val());
             });
 
-            function choice_field_mask_show(val)
-            {
+            function choice_field_mask_show(val) {
                 var controlGroupIdFunc = function (field) {
-                    return '#sonata-ba-field-container-{{ main_form_name }}' + field;
+                    // Most of fields are named with an underscore
+                    var defaultFieldId = '#sonata-ba-field-container-{{ main_form_name }}_' + field;
 
+                    // Some fields may be named with a dash (like keys of immutable array form type)
+                    if (jQuery(defaultFieldId).length === 0) {
+                        return '#sonata-ba-field-container-{{ main_form_name }}-' + field;
+                    }
+
+                    return defaultFieldId;
                 };
-                if (map[val] == undefined) {
-                    jQuery.each(allFields, function (i, field) {
-                        jQuery(controlGroupIdFunc(field)).hide();
-                    });
-                    return;
-                }
 
                 jQuery.each(allFields, function (i, field) {
                     jQuery(controlGroupIdFunc(field)).hide();
                 });
-                jQuery.each(map[val], function (i, field) {
-                    jQuery(controlGroupIdFunc(field)).show();
-                });
+
+                if (map[val]) {
+                    jQuery.each(map[val], function (i, field) {
+                        jQuery(controlGroupIdFunc(field)).show();
+                    });
+                }
             }
             choice_field_mask_show(showMaskChoiceEl.val());
         });

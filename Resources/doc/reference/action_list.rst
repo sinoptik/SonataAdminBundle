@@ -142,8 +142,10 @@ Available types and associated options
 | array     |                | Displays an array                                                     |
 +-----------+----------------+-----------------------------------------------------------------------+
 | boolean   | ajax_hidden    | Yes/No; ajax_hidden allows to hide list field during an AJAX context. |
-+-----------+----------------+-----------------------------------------------------------------------+
-| boolean   | editable       | Yes/No; editable allows to edit directly from the list if authorized. |
++           +----------------+-----------------------------------------------------------------------+
+|           | editable       | Yes/No; editable allows to edit directly from the list if authorized. |
++           +----------------+-----------------------------------------------------------------------+
+|           | inverse        | Yes/No; reverses the background color (green for false, red for true) |
 +-----------+----------------+-----------------------------------------------------------------------+
 | choice    | choices        | Possible choices                                                      |
 +           +----------------+-----------------------------------------------------------------------+
@@ -191,6 +193,12 @@ Available types and associated options
 +-----------+----------------+-----------------------------------------------------------------------+
 
 If you have the SonataDoctrineORMAdminBundle installed, you have access to more field types, see `SonataDoctrineORMAdminBundle Documentation <https://sonata-project.org/bundles/doctrine-orm-admin/master/doc/reference/list_field_definition.html>`_.
+
+.. note::
+
+    It is better to prefer non negative notions when possible for boolean
+    values so use the ``inverse`` option if you really cannot find a good enough
+    antonym for the name you have.
 
 Customizing the query used to generate the list
 -----------------------------------------------
@@ -539,7 +547,8 @@ You can :
 - `header_style`: Customize the style of header (width, color, background, align...)
 - `header_class`: Customize the class of the header
 - `collapse`: Allow to collapse long text fields with a "read more" link
-- `row_align`:    Customize the alignment of the rendered inner cells
+- `row_align`: Customize the alignment of the rendered inner cells
+- `label_icon`: Add an icon before label
 
 .. code-block:: php
 
@@ -558,6 +567,9 @@ You can :
             ->add('description', 'text', array(
                 'header_style' => 'width: 35%',
                 'collapse' => true
+            )
+            ->add('upvotes', null, array(
+                'label_icon' => 'fa fa-thumbs-o-up'
             )
             ->add('actions', null, array(
                 'header_class' => 'customActions',
@@ -583,7 +595,16 @@ If you want to customise the `collapse` option, you can also give an array to ov
             )
             // ...
 
+If you want to show only the `label_icon`:
 
+.. code-block:: php
+
+            // ...
+            ->add('upvotes', null, array(
+                'label' => false,
+                'label_icon' => 'fa fa-thumbs-o-up'
+            )
+            // ...
 
 .. _`issues on GitHub`: https://github.com/sonata-project/SonataAdminBundle/issues/1519
 
@@ -614,3 +635,11 @@ in your admin services:
         arguments: [~, Sonata\AdminBundle\Entity\News, ~]
         tags:
             - { name: sonata.admin, manager_type: orm, group: admin, label: News, show_mosaic_button: false }
+
+Checkbox range selection
+------------------------
+
+.. tip::
+
+    You can check / uncheck a range of checkboxes by clicking a first one,
+    then a second one with shift + click.

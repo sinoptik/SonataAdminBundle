@@ -85,15 +85,15 @@ class GroupMenuProvider implements MenuProviderInterface
      *
      * @throws \InvalidArgumentException if the menu does not exists
      */
-    public function get($name, array $options = array())
+    public function get($name, array $options = [])
     {
         $group = $options['group'];
 
         $menuItem = $this->menuFactory->createItem(
             $options['name'],
-            array(
+            [
                 'label' => $group['label'],
-            )
+            ]
         );
 
         if (empty($group['on_top'])) {
@@ -107,11 +107,11 @@ class GroupMenuProvider implements MenuProviderInterface
                     }
 
                     $label = $admin->getLabel();
-                    $options = $admin->generateMenuUrl('list', array(), $item['route_absolute']);
-                    $options['extras'] = array(
-                        'translation_domain' => $admin->getTranslationDomain(),
+                    $options = $admin->generateMenuUrl('list', [], $item['route_absolute']);
+                    $options['extras'] = [
+                        'label_catalogue' => $admin->getTranslationDomain(),
                         'admin' => $admin,
-                    );
+                    ];
                 } else {
                     //NEXT_MAJOR: Remove if statement of null checker.
                     if (null !== $this->checker) {
@@ -123,14 +123,14 @@ class GroupMenuProvider implements MenuProviderInterface
                     }
 
                     $label = $item['label'];
-                    $options = array(
+                    $options = [
                         'route' => $item['route'],
                         'routeParameters' => $item['route_params'],
                         'routeAbsolute' => $item['route_absolute'],
-                        'extras' => array(
-                            'translation_domain' => $group['label_catalogue'],
-                        ),
-                    );
+                        'extras' => [
+                            'label_catalogue' => $group['label_catalogue'],
+                        ],
+                    ];
                 }
 
                 $menuItem->addChild($label, $options);
@@ -150,6 +150,7 @@ class GroupMenuProvider implements MenuProviderInterface
                     // Do not display group if no `list` url is available or user doesn't have the LIST access rights
                     if (!$admin->hasRoute('list') || !$admin->hasAccess('list')) {
                         $menuItem->setDisplay(false);
+
                         continue;
                     }
 
@@ -158,7 +159,8 @@ class GroupMenuProvider implements MenuProviderInterface
                     $menuItem->setExtra('on_top', $group['on_top']);
                     $menuItem->setUri($options);
                 } else {
-                    $menuItem->setUri($item['route']);
+                    $router = $this->pool->getContainer()->get('router');
+                    $menuItem->setUri($router->generate($item['route']));
                 }
             }
         }
@@ -174,7 +176,7 @@ class GroupMenuProvider implements MenuProviderInterface
      *
      * @return bool
      */
-    public function has($name, array $options = array())
+    public function has($name, array $options = [])
     {
         return 'sonata_group_menu' === $name;
     }

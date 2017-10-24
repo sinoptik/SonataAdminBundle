@@ -11,12 +11,13 @@
 
 namespace Sonata\AdminBundle\Tests\Generator;
 
+use PHPUnit\Framework\TestCase;
 use Sonata\AdminBundle\Manipulator\ServicesManipulator;
 
 /**
  * @author Marek Stipek <mario.dweller@seznam.cz>
  */
-class ServicesManipulatorTest extends \PHPUnit_Framework_TestCase
+class ServicesManipulatorTest extends TestCase
 {
     /** @var ServicesManipulator */
     private $servicesManipulator;
@@ -56,7 +57,8 @@ class ServicesManipulatorTest extends \PHPUnit_Framework_TestCase
         class: admin_class
         arguments: [~, class, controller_name]
         tags:
-            - { name: sonata.admin, manager_type: manager_type, group: admin, label: class }\n",
+            - { name: sonata.admin, manager_type: manager_type, group: admin, label: class }
+        public: true\n",
             file_get_contents($this->file)
         );
         $this->servicesManipulator->addResource(
@@ -73,12 +75,14 @@ class ServicesManipulatorTest extends \PHPUnit_Framework_TestCase
         arguments: [~, class, controller_name]
         tags:
             - { name: sonata.admin, manager_type: manager_type, group: admin, label: class }
+        public: true
 
     another_service_id:
         class: another_admin_class
         arguments: [~, another_class, another_controller_name]
         tags:
-            - { name: sonata.admin, manager_type: another_manager_type, group: admin, label: another_class }\n",
+            - { name: sonata.admin, manager_type: another_manager_type, group: admin, label: another_class }
+        public: true\n",
             file_get_contents($this->file)
         );
     }
@@ -121,7 +125,8 @@ class ServicesManipulatorTest extends \PHPUnit_Framework_TestCase
         class: admin_class
         arguments: [~, class, controller_name]
         tags:
-            - { name: sonata.admin, manager_type: manager_type, group: admin, label: class }\n",
+            - { name: sonata.admin, manager_type: manager_type, group: admin, label: class }
+        public: true\n",
             file_get_contents($this->file)
         );
     }

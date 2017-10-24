@@ -70,6 +70,7 @@ or by adding it to your ``admin.yml``:
                 - null
                 - AppBundle\Entity\Car
                 - AppBundle:CRUD
+            public: true
 
 For more information about service configuration please refer to Step 3 of :doc:`../reference/getting_started`
 
@@ -100,7 +101,7 @@ to implement a ``clone`` action.
             $object = $this->admin->getSubject();
 
             if (!$object) {
-                throw new NotFoundHttpException(sprintf('unable to find the object with id : %s', $id));
+                throw new NotFoundHttpException(sprintf('unable to find the object with id: %s', $id));
             }
 
             // Be careful, you may need to overload the __clone method of your object
@@ -116,7 +117,7 @@ to implement a ``clone`` action.
             return new RedirectResponse($this->admin->generateUrl('list'));
 
             // if you have a filtered list and want to keep your filters after the redirect
-            // return new RedirectResponse($this->admin->generateUrl('list', $this->admin->getFilterParameters()));
+            // return new RedirectResponse($this->admin->generateUrl('list', array('filter' => $this->admin->getFilterParameters())));
         }
     }
 
