@@ -363,8 +363,6 @@ class HelperController
 
         if ($context === 'filter') {
             $admin->checkAccess('list');
-        } elseif (!$admin->hasAccess('create') && !$admin->hasAccess('edit')) {
-            throw new AccessDeniedException();
         }
 
         // subject will be empty to avoid unnecessary database requests and keep autocomplete function fast
